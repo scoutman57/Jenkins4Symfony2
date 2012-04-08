@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<project name="symfony2-project" default="build">
+	<target name="build" depends="prepare,phpunit" />
+
+	<target name="build-full" depends="prepare,lint,phpmd-ci,phploc,phpunit" />
+
+	<taskdef name="phpmd" classname="org.phpmd.ant.PHPMDTask" />
+
+	<target name="clean" description="Cleanup build artifacts">
+		<delete dir="${basedir}/api" />
+		<delete dir="${basedir}/code-browser" />
+		<delete dir="${basedir}/logs" />
+	</target>
+
+	<target name="prepare" depends="clean" description="Prepare for build">
+		<mkdir dir="${basedir}/api" />
+		<mkdir dir="${basedir}/code-browser" />
+		<mkdir dir="${basedir}/logs" />
+		<exec executable="php">
+			<arg path="${basedir}/../vendor/bundles/Sensio/Bundle/DistributionBundle/Resources/bin/build_bootstrap.php" />
+		</exec>
+	</target>
+
+	<target name="lint">
+		<apply executable="php" failonerror="true">
+			<arg value="-l" />
+
+			<fileset dir="${basedir}/../app">
+				<exclude name="**/cache/**" />
+				<include name="**/*.php" />
+			</fileset>
+
+			<fileset dir="${basedir}/../src">
+				<exclude name="**/cache/**" />
+				<include name="**/*.php" />
+			</fileset>
+		</apply>
+	</target>
+
+	<target name="phploc" description="Measure project size using PHPLOC">
+		<exec executable="phploc">
+			<arg value="--exclude" />
+			<arg value="${basedir}/../app/cache" />
+			<arg value="--log-csv" />
+			<arg value="${basedir}/logs/phploc.csv" />
+			<arg path="${basedir}/../app" />
+			<arg path="${basedir}/../src" />
+		</exec>
+	</target>
+
+	<target name="phpmd-ci" description="Perform project mess detection using PHPMD">
+		<phpmd rulesetfiles="unusedcode" failonerror="off">
+			<formatter type="xml" toFile="${basedir}/logs/pmd.xml" />
+			<fileset dir="${basedir}/../app">
+				<exclude name="**/cache/**" />
+				<include name="**/*.php" />
+			</fileset>
+
+			<fileset dir="${basedir}/../src">
+				<exclude name="**/cache/**" />
+				<include name="**/*.php" />
+			</fileset>
+		</phpmd>
+	</target>
+
+	<target name="phpunit" description="Run unit tests with PHPUnit">
+		<exec executable="phpunit" failonerror="true">
+			<arg value="-c" />
+			<arg path="${basedir}/../app" />
+		</exec>
+	</target>
+
+</project>
